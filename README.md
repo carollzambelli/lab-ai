@@ -48,7 +48,7 @@ O curso é dividido em três módulos sequenciais:
 ## 1. Clonando o repositório
 
 ```bash
-git clone <URL_DO_SEU_REPO> ai-lab
+git clone URL_DO_REPO
 cd ai-lab
 ```
 
