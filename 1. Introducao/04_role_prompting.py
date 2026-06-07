@@ -7,7 +7,6 @@ de profundidade da resposta. No LangChain, isso é uma
 """
 
 from __future__ import annotations
-
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama

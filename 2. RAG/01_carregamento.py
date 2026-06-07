@@ -10,29 +10,38 @@ Cada `Document` tem:
 """
 
 from __future__ import annotations
+from pathlib import Path
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.documents import Document
+from utils import PASTA_DADOS
 
-from rag_lib import PASTA_DADOS, carregar_pdfs
+
+def carregar_pdfs(pasta: Path = PASTA_DADOS) -> list[Document]:
+    """
+    Lê recursivamente todos os PDFs de `pasta` e retorna uma lista de
+    `Document` (1 por página). Cada doc tem `metadata['source']` com o
+    caminho do arquivo e `metadata['page']` com o número da página.
+    """
+    documentos: list[Document] = []
+    pdfs = sorted(pasta.rglob("*.pdf"))
+    for pdf_path in pdfs:
+        loader = PyPDFLoader(str(pdf_path))
+        documentos.extend(loader.load())
+    return documentos
 
 
 def main() -> None:
     print(f"Lendo PDFs de: {PASTA_DADOS}\n")
     docs = carregar_pdfs()
-
-    if not docs:
-        print("[AVISO] Nenhum PDF encontrado. Coloque arquivos .pdf na pasta dados/.")
-        return
-
     fontes = sorted({d.metadata.get("source", "?") for d in docs})
-    print(f"[ok] {len(docs)} página(s) extraída(s) de {len(fontes)} arquivo(s):")
     for f in fontes:
         n = sum(1 for d in docs if d.metadata.get("source") == f)
         print(f"  - {f}: {n} página(s)")
-
     print("\n--- Prévia do primeiro Document ---")
     primeiro = docs[0]
     print(f"metadata: {primeiro.metadata}")
     conteudo = primeiro.page_content
-    print(conteudo[:500] + ("…" if len(conteudo) > 500 else ""))
+    print(conteudo[:500])
 
 
 if __name__ == "__main__":

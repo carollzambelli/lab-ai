@@ -1,18 +1,33 @@
 """
-Etapa 4 do RAG — Indexação no ChromaDB (via langchain-chroma)
+Etapa 3 do RAG — Indexação no ChromaDB (via langchain-chroma)
 
 `Chroma` (do langchain-chroma) é um vector store que:
     - persiste em disco automaticamente (`persist_directory`)
     - aceita uma `embedding_function` (no nosso caso, `OllamaEmbeddings`)
     - gera os embeddings sozinho quando você chama `add_documents`
 
-Idempotência: cada `add_documents` gera ids novos. Para reindexar do
-zero, apague a pasta `chroma_db/`.
 """
 
 from __future__ import annotations
+from importlib import import_module
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
 
-from rag_lib import carregar_pdfs, chunkar_documentos, get_vector_store, indexar_chunks
+from utils import get_vector_store
+
+carregar_pdfs = import_module("01_carregamento").carregar_pdfs
+chunkar_documentos = import_module("02_chunking").chunkar_documentos
+
+
+def indexar_chunks(chunks: list[Document]) -> Chroma:
+    """
+    Adiciona os chunks no vector store. `add_documents` gera os
+    embeddings via `OllamaEmbeddings` e grava em disco automaticamente.
+    """
+    vs = get_vector_store()
+    if chunks:
+        vs.add_documents(chunks)
+    return vs
 
 
 def main() -> None:
@@ -29,9 +44,7 @@ def main() -> None:
     print(f"      → {len(chunks)} chunk(s).")
 
     print("[3/3] Indexando no ChromaDB (gera embeddings via Ollama)...")
-    indexar_chunks(chunks)
-
-    vs = get_vector_store()
+    vs = indexar_chunks(chunks)
     print(f"\n[ok] Coleção atual contém {vs._collection.count()} chunk(s).")  # noqa: SLF001
 
 

@@ -17,7 +17,6 @@ literalmente VÊ o raciocínio sendo construído.
 """
 
 from __future__ import annotations
-
 import re
 import sys
 import time

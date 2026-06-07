@@ -12,13 +12,33 @@ Isso preserva contexto semântico melhor que um corte cego por tamanho.
 """
 
 from __future__ import annotations
-
+from importlib import import_module
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from utils import OVERLAP, TAMANHO_CHUNK
 
-from rag_lib import carregar_pdfs, chunkar_documentos
+carregar_pdfs = import_module("01_carregamento").carregar_pdfs
 
 
-def demo_em_texto_inline() -> None:
+def chunkar_documentos(
+    documentos: list[Document],
+    tamanho: int = TAMANHO_CHUNK,
+    overlap: int = OVERLAP,
+) -> list[Document]:
+    """
+    Quebra cada `Document` em chunks menores, preservando os metadados.
+    Usa o splitter recursivo (tenta separar primeiro por parágrafo,
+    depois linha, depois espaço).
+    """
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=tamanho,
+        chunk_overlap=overlap,
+        separators=["\n\n", "\n", ". ", " ", ""],
+    )
+    return splitter.split_documents(documentos)
+
+
+def demo_em_texto_inline() -> None:  # Rascunho
     doc_demo = Document(
         page_content=(
             "RAG significa Retrieval-Augmented Generation. "
@@ -30,7 +50,6 @@ def demo_em_texto_inline() -> None:
     )
 
     chunks = chunkar_documentos([doc_demo], tamanho=200, overlap=40)
-    print(f"Texto demo: {len(doc_demo.page_content)} caracteres → {len(chunks)} chunk(s).\n")
     for i, c in enumerate(chunks):
         print(f"--- chunk {i} ({len(c.page_content)} chars) ---")
         print(c.page_content)
@@ -53,7 +72,7 @@ def demo_em_pdfs() -> None:
 
 
 if __name__ == "__main__":
-    print("=== Demo 1 — chunking de um texto inline ===\n")
-    demo_em_texto_inline()
+    #print("=== Demo 1 — chunking de um texto inline ===\n")
+    #demo_em_texto_inline()
     print("\n=== Demo 2 — chunking dos seus PDFs ===\n")
     demo_em_pdfs()

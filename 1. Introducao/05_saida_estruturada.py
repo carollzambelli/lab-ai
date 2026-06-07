@@ -21,7 +21,6 @@ TEXTO = (
     "Mora em Belo Horizonte e tem dois cachorros, o Rex e a Luna."
 )
 
-
 class Pessoa(BaseModel):
     """Pessoa mencionada num texto livre."""
 
