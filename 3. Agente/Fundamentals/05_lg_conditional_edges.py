@@ -113,9 +113,9 @@ builder.add_node("suporte", no_suporte)
 builder.add_edge(START, "analisar")
 
 builder.add_conditional_edges(
-    "analisar",
-    router,
-    {
+    "analisar",                             # Nó origem
+    router,                                 # Função de decisão 
+    {                                       # Dicionário com key = nó de destino
         "especialista": "especialista",
         "marketing": "marketing",
         "suporte": "suporte",

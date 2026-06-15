@@ -66,7 +66,6 @@ agente = create_agent(
     system_prompt=system_prompt,
 )
 
-
 # ---------------------------------------------------------------------------
 # 3. Execução com streaming — mostra cada passo do agente.
 # ---------------------------------------------------------------------------
@@ -83,8 +82,8 @@ def perguntar(texto: str) -> str:
         tipo = type(ult).__name__
         tool_calls = getattr(ult, "tool_calls", None)
         if tool_calls:
-            for tc in tool_calls:
-                print(f"  [{tipo}] tool_calls -> {tc['name']}({tc['args']})")
+            nomes = [t["name"] for t in tool_calls]
+            print(f"  [{tipo}] tool_calls -> {nomes}")
         else:
             texto_msg = (getattr(ult, "content", "") or "")[:200]
             print(f"  [{tipo}] {texto_msg}")
