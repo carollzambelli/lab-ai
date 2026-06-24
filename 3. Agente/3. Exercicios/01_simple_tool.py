@@ -1,13 +1,13 @@
 """
 Exercício 01 — Tool simples local (cálculo de orçamento de viagem)
 
-Objetivo:
+Objetivo didático:
     Praticar o ciclo de tool calling mais básico:
 
         Usuário pede algo -> LLM decide chamar a tool ->
         tool roda (Python puro) -> LLM lê o resultado e responde.
 
-    A tool aqui é DETERMINÍSTICA — só fórmulas — para você enxergar
+    A tool aqui é DETERMINÍSTICA — só fórmulas — para o aluno enxergar
     com clareza onde termina o LLM e onde começa o código que ele
     delegou. Em produção essa tool poderia falar com um ERP, uma planilha,
     um banco, etc.
@@ -18,31 +18,6 @@ Pontos para observar:
     2. `temperature=0` deixa o agente mais determinístico (importante em
        agentes que executam código).
     3. Usamos Ollama (llama3.2) — sem chave de API, sem custo.
-
-Estrutura do script:
-    1) Importar as dependências (LangChain, LangChain-Ollama).
-    2) Definir a constante MODELO.
-    3) Criar a tool `calculate_budget` (decorada com @tool) que recebe
-       (days, origin, destination, date_start, date_end) e devolve um
-       orçamento em string formatada.
-    4) Em `main()`:
-       a) Criar o LLM (ChatOllama, temperature=0).
-       b) Criar o agente com `create_agent(llm, [calculate_budget])`.
-       c) Montar a pergunta do usuário.
-       d) Invocar o agente com HumanMessage.
-       e) Exibir a resposta bruta (pprint) e a resposta final (texto).
-
-Regras de cálculo do orçamento (implementar dentro da tool):
-    - Passagem base: R$ 2500 se origem != destino; caso contrário 0.
-    - Se destino contiver "paris" OU "londres" (case-insensitive):
-        +R$ 3000 na passagem e custo diário de R$ 800/dia.
-    - Se destino contiver "buenos aires":
-        +R$ 1000 na passagem e custo diário de R$ 400/dia.
-    - Demais destinos: custo diário R$ 250/dia (sem extra na passagem).
-    - Total = passagem + (custo_diário * dias).
-
-Como rodar:
-    python "3. Agente/3. Exercicios/01_simple_tool_aluno.py"
 """
 from __future__ import annotations
 import pprint
@@ -72,34 +47,55 @@ def calculate_budget(
         destination: cidade de destino (ex: "Paris").
         date_start: data de ida no formato YYYY-MM-DD.
         date_end: data de volta no formato YYYY-MM-DD.
-
-    Retorno esperado:
-        Uma STRING com as informações da viagem (datas, rota, dias,
-        valor da passagem, custo diário e orçamento total).
     """
-    ## aqui coloque seu código ###
+    print(f"\n[TOOL EXECUTION] Calculando orçamento de {origin} para {destination} (Dias: {days})...")
+
+    # Regras determinísticas, um cenário onde não é necessário uma LLM 
+    base_flight_cost = 2500.0 if origin != destination else 0.0
+    destino = destination.lower()
+    if "paris" in destino or "londres" in destino:
+        base_flight_cost += 3000.0
+        cost_per_day = 800.0
+    elif "buenos aires" in destino:
+        base_flight_cost += 1000.0
+        cost_per_day = 400.0
+    else:
+        cost_per_day = 250.0
+
+    total_cost = base_flight_cost + (cost_per_day * days)
+
+    return (
+        f"Detalhes da Viagem:\n"
+        f"Datas: {date_start} até {date_end}\n"
+        f"Rota: {origin} -> {destination}\n"
+        f"Dias totais: {days}\n"
+        f"Passagem est.: R$ {base_flight_cost:.2f}\n"
+        f"Custo diário est.: R$ {cost_per_day:.2f}/dia\n"
+        f"-> Orçamento Total Recomendado: R$ {total_cost:.2f}"
+    )
 
 
 def main() -> None:
-    """Cria o LLM, monta o agente, faz a pergunta e exibe a resposta."""
     print("Exercício 01: Tool simples local (orçamento de viagem)\n")
 
-    # Passos sugeridos:
-    # 1) Crie o LLM com ChatOllama(model=MODELO, temperature=0).
-    # 2) Crie o agente com create_agent(llm, [calculate_budget]).
-    # 3) Monte a pergunta do usuário (sugestão abaixo):
-    #
-    #       "Quero fazer uma viagem de São Paulo para Paris. Serão 7 dias,
-    #        de 10 de julho (2026-07-10) a 17 de julho (2026-07-17).
-    #        Quanto de budget eu preciso?"
-    #
-    # 4) Invoque o agente passando {"messages": [HumanMessage(content=...)]}.
-    # 5) Imprima:
-    #       - o objeto bruto com pprint (útil para enxergar a sequência
-    #         de mensagens: HumanMessage -> AIMessage(tool_calls) ->
-    #         ToolMessage -> AIMessage final)
-    #       - apenas o texto da última mensagem (response["messages"][-1].content)
-    ## aqui coloque seu código ###
+    llm = ChatOllama(model=MODELO, temperature=0)
+    agent = create_agent(llm, [calculate_budget])
+
+    user_input = (
+        "Quero fazer uma viagem de São Paulo para Paris. Serão 7 dias, "
+        "de 10 de julho (2026-07-10) a 17 de julho (2026-07-17). "
+        "Quanto de budget eu preciso?"
+    )
+    print(f"Usuário: '{user_input}'\n")
+
+    print("Agente orquestrando...\n")
+    response = agent.invoke({"messages": [HumanMessage(content=user_input)]})
+
+    print("\n[Raw struct — útil para ver a sequência de mensagens]:")
+    pprint.pprint(response)
+
+    print("\n[Resposta final em texto]:")
+    print(response["messages"][-1].content)
 
 
 if __name__ == "__main__":
